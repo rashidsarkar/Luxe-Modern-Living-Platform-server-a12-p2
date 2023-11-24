@@ -52,7 +52,6 @@ async function run() {
 
     //midleware
     const verifyToken = (req, res, next) => {
-      console.log(req.headers);
       if (!req.headers.authorization) {
         return res.status(401).send({ message: "FORBIDDEN" });
       }
@@ -74,13 +73,11 @@ async function run() {
       try {
         let user = req.body;
 
-        console.log(user);
         user = {
           name: user.name,
           email: user.email,
           role: "user",
         };
-        // console.log(user);
 
         const query = { email: user.email };
         const existingUser = await userCollection.findOne(query);
@@ -114,6 +111,34 @@ async function run() {
       }
     });
 
+    app.get("/api/user/userRole/:email", verifyToken, async (req, res) => {
+      try {
+        const email = req.params.email;
+        if (email !== req.decoded.email) {
+          return res.status(403).send({ message: "unauthorize access" });
+        }
+        const query = { email: email };
+        const user = await userCollection.findOne(query);
+        let userRole = false;
+        if (user) {
+          if (user?.role === "admin") {
+            userRole = "admin";
+            return res.send({ userRole });
+          } else if (user?.role === "member") {
+            userRole = "member";
+            return res.send({ userRole });
+          } else if (user?.role === "user") {
+            userRole = "user";
+            return res.send({ userRole });
+          }
+        }
+        res.send({ userRole });
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
     //api
 
     app.get("/api/apartmentRooms", async (req, res) => {
@@ -141,7 +166,6 @@ async function run() {
       try {
         const data = req.body;
 
-        console.log(data);
         const result = await agreementCollection.insertOne(data);
         res.send(result);
       } catch (error) {
