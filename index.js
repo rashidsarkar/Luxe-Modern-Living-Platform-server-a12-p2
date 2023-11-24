@@ -53,18 +53,30 @@ async function run() {
     //midleware
     const verifyToken = (req, res, next) => {
       if (!req.headers.authorization) {
-        return res.status(401).send({ message: "FORBIDDEN" });
+        return res.status(401).send({ message: "Unauthorized" });
       }
       const token = req.headers.authorization.split(" ")[1];
       // jwt.verify(token, process.env.ACCESS_TOKEN_);
       jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
           // res error
-          return res.status(401).send({ message: "FORBIDDEN" });
+          return res.status(401).send({ message: "Unauthorized" });
         }
         req.decoded = decoded;
         next();
       });
+    };
+
+    //user veri
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isAdmin = user?.role === "admin";
+      if (!isAdmin) {
+        return res.status(403).send({ message: "Forbidden" });
+      }
+      next();
     };
 
     //user api
@@ -115,7 +127,7 @@ async function run() {
       try {
         const email = req.params.email;
         if (email !== req.decoded.email) {
-          return res.status(403).send({ message: "unauthorize access" });
+          return res.status(403).send({ message: "Forbidden  access" });
         }
         const query = { email: email };
         const user = await userCollection.findOne(query);
@@ -133,6 +145,25 @@ async function run() {
           }
         }
         res.send({ userRole });
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
+    app.get("/user/admin/:email", verifyToken, async (req, res) => {
+      try {
+        const email = req.params.email;
+        if (email !== req.decoded.email) {
+          return res.status(403).send({ message: "Forbidden" });
+        }
+        const query = { email: email };
+        const user = await userCollection.findOne(query);
+        let admin = false;
+        if (user) {
+          admin = user?.role === "admin";
+        }
+        res.send({ admin });
       } catch (error) {
         console.error("Error fetching rooms:", error);
         res.status(500).send("Internal Server Error");
