@@ -63,6 +63,18 @@ async function run() {
     });
     //agreementCollection
     //!SECTION 1111
+    app.post("/api/user/createAgreement", async (req, res) => {
+      try {
+        const data = req.body;
+
+        console.log(data);
+        const result = await agreementCollection.insertOne(data);
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
 
     // Send a ping to confirm a successful connection
 
