@@ -41,6 +41,33 @@ async function run() {
       .collection("agreementData");
     const userCollection = client.db("apartmentDB").collection("usersData");
 
+    //!SECTION JWT api
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
+
+    //midleware
+    // const verifyToken = (req, res, next) => {
+    //   console.log(req.headers);
+    //   if (!req.headers.authorization) {
+    //     return res.status(401).send({ message: "FORBIDDEN" });
+    //   }
+    //   const token = req.headers.authorization.split(" ")[1];
+    //   // jwt.verify(token, process.env.ACCESS_TOKEN_);
+    //   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    //     if (err) {
+    //       // res error
+    //       return res.status(401).send({ message: "FORBIDDEN" });
+    //     }
+    //     req.decoded = decoded;
+    //     next();
+    //   });
+    // };
+
     //user api
     //!SECTION creat api 1
     app.post("/api/createUser", async (req, res) => {
