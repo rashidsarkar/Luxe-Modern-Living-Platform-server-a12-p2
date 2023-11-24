@@ -39,6 +39,36 @@ async function run() {
     const agreementCollection = client
       .db("apartmentDB")
       .collection("agreementData");
+    const userCollection = client.db("apartmentDB").collection("usersData");
+
+    //user api
+    //!SECTION creat api 1
+    app.post("/api/createUser", async (req, res) => {
+      try {
+        let user = req.body;
+
+        console.log(user);
+        user = {
+          name: user.name,
+          email: user.email,
+          role: "user",
+        };
+        // console.log(user);
+
+        const query = { email: user.email };
+        const existingUser = await userCollection.findOne(query);
+        if (existingUser) {
+          return res.send({ mess: "user already exists", insertedId: null });
+        }
+        const result = await userCollection.insertOne(user);
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
+    // make member api
 
     //api
 
