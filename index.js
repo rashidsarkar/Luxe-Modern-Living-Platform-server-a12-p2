@@ -236,13 +236,16 @@ async function run() {
             role: "member",
           });
           //total members
-
-          //total booked  rooms  and percent od abialble rooms
-          const bookedRooms = await agreementCollection.countDocuments({
-            Status: "checked",
+          const bookedRooms2 = await agreementCollection.countDocuments({
+            agreementAcceptDate: { $exists: true },
           });
+          console.log(bookedRooms2);
+          //total booked  rooms  and percent od abialble rooms
+          // const bookedRooms = await agreementCollection.countDocuments({
+          //   Status: "checked",
+          // });
           // Calculate percentage of available rooms
-          const percentBooked = ((bookedRooms / totalRooms) * 100).toFixed(2);
+          const percentBooked = ((bookedRooms2 / totalRooms) * 100).toFixed(2);
 
           // available rooms
           const percentavailable = 100 - percentBooked;
@@ -251,7 +254,7 @@ async function run() {
             totalRooms,
             totalUsers,
             totalMember,
-            bookedRooms,
+            bookedRooms2,
             percentBooked,
             percentavailable,
           });
@@ -352,43 +355,43 @@ async function run() {
       }
     });
     //update status
-    app.put(
-      "/api/admin/handleAcptreq/:id",
-      verifyToken,
-      verifyAdmin,
-
-      async (req, res) => {
-        try {
-          let id = req.params.id;
-          const email = req.body.email;
-          // console.log(id, email);
-          const filerArgreement = { _id: new ObjectId(id) };
-          const filterUser = { email: email };
-          const updateUser = {
-            $set: {
-              role: "member",
-            },
-          };
-          const userUpdate = await userCollection.updateOne(
-            filterUser,
-            updateUser
-          );
-          const updatedArgeement = {
-            $set: {
-              Status: "checked",
-            },
-          };
-          const agreenmUpdate = await agreementCollection.updateOne(
-            filerArgreement,
-            updatedArgeement
-          );
-          res.status(200).send({ userUpdate, agreenmUpdate });
-        } catch (error) {
-          console.error("Error get update Info:", error);
-          res.status(500).send("Internal Server Error");
-        }
+    app.put("/api/admin/handleAcptreq/:id", async (req, res) => {
+      try {
+        let id = req.params.id;
+        // console.log(req.body);
+        const email = req.body.email;
+        const agreementAcceptDate = req.body.agreementAcceptDate;
+        // console.log(agreementAcceptDate);
+        console.log(id, email, agreementAcceptDate);
+        const filerArgreement = { _id: new ObjectId(id) };
+        const filterUser = { email: email };
+        const updateUser = {
+          $set: {
+            role: "member",
+          },
+        };
+        const userUpdate = await userCollection.updateOne(
+          filterUser,
+          updateUser
+        );
+        const updatedArgeement = {
+          $set: {
+            Status: "checked",
+            agreementAcceptDate: agreementAcceptDate,
+          },
+        };
+        const options = { upsert: true };
+        const agreenmUpdate = await agreementCollection.updateOne(
+          filerArgreement,
+          updatedArgeement,
+          options
+        );
+        res.status(200).send({ userUpdate, agreenmUpdate });
+      } catch (error) {
+        console.error("Error get update Info:", error);
+        res.status(500).send("Internal Server Error");
       }
-    );
+    });
     // handle reject
     app.put(
       "/api/admin/handleReject/:id",
@@ -453,6 +456,49 @@ async function run() {
         try {
           const cuponData = req.body;
           const result = await couponCollection.insertOne(cuponData);
+          res.send(result);
+        } catch (error) {
+          console.error("Error post copon Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
+    // deleted cupon
+    app.delete(
+      "/api/admin/deleteCopun/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params?.id;
+          const filter = { _id: new ObjectId(id) };
+          const result = await couponCollection.deleteOne(filter);
+          res.send(result);
+        } catch (error) {
+          console.error("Error post copon Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
+    //update copun
+    app.put(
+      "/api/updateCopun/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params?.id;
+          const filter = { _id: new ObjectId(id) };
+          const cuponData = req.body;
+          const updateDoc = {
+            $set: {
+              couponCode: cuponData.couponCode,
+              description: cuponData.description,
+              discountPercentage: cuponData.discountPercentage,
+            },
+          };
+
+          const result = await couponCollection.updateOne(filter, updateDoc);
           res.send(result);
         } catch (error) {
           console.error("Error post copon Info:", error);
