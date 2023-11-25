@@ -323,16 +323,21 @@ async function run() {
       }
     });
     // make announce api
-    app.post("/api/makeAnnounce", async (req, res) => {
-      try {
-        const data = req.body;
-        const result = await announceCollection.insertOne(data);
-        res.send(result);
-      } catch (error) {
-        console.error("Error create announce Info:", error);
-        res.status(500).send("Internal Server Error");
+    app.post(
+      "/api/makeAnnounce",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const data = req.body;
+          const result = await announceCollection.insertOne(data);
+          res.send(result);
+        } catch (error) {
+          console.error("Error create announce Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
       }
-    });
+    );
 
     // get all argument request
     app.get("/api/argumentRequest", verifyToken, async (req, res) => {
@@ -439,6 +444,22 @@ async function run() {
         res.status(500).send("Internal Server Error");
       }
     });
+
+    app.post(
+      "/api/admin/makeCopun",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const cuponData = req.body;
+          const result = await couponCollection.insertOne(cuponData);
+          res.send(result);
+        } catch (error) {
+          console.error("Error post copon Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
 
     // Send a ping to confirm a successful connection
 
