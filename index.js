@@ -205,6 +205,94 @@ async function run() {
       }
     });
 
+    ///  database info
+    app.get(
+      "/api/admin/dataInfo",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          //total rooms
+          const totalRooms = await roomsCollection.countDocuments({});
+          //total users
+
+          const totalUsers = await userCollection.countDocuments({
+            role: "user",
+          });
+          const totalMember = await userCollection.countDocuments({
+            role: "member",
+          });
+          //total members
+
+          //total booked  rooms  and percent od abialble rooms
+          const bookedRooms = await agreementCollection.countDocuments({
+            Status: "checked",
+          });
+          // Calculate percentage of available rooms
+          const percentBooked = ((bookedRooms / totalRooms) * 100).toFixed(2);
+
+          // available rooms
+          const percentavailable = 100 - percentBooked;
+
+          res.send({
+            totalRooms,
+            totalUsers,
+            totalMember,
+            bookedRooms,
+            percentBooked,
+            percentavailable,
+          });
+        } catch (error) {
+          console.error("Error fetching Data Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
+
+    //members
+
+    app.get(
+      "/api/admin/memberInfo",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const membersInfo = await userCollection
+            .find({
+              role: "member",
+            })
+            .toArray();
+          res.send(membersInfo);
+        } catch (error) {
+          console.error("Error fetching Member Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
+    //detelte member
+    app.patch("/api/admin/deleteMember/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            role: "user",
+          },
+        };
+
+        const result = await userCollection.updateOne(query, updatedDoc);
+
+        if (result.modifiedCount > 0) {
+          res.status(200).send({ message: "User role updated successfully." });
+        } else {
+          res.status(404).send({ message: "User not found." });
+        }
+      } catch (error) {
+        console.error("Error fetching Member Info:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
     // Send a ping to confirm a successful connection
 
     await client.db("admin").command({ ping: 1 });
