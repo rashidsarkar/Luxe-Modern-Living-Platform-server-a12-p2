@@ -43,6 +43,9 @@ async function run() {
     const announceCollection = client
       .db("apartmentDB")
       .collection("announcementsData");
+    const couponCollection = client
+      .db("apartmentDB")
+      .collection("couponCollection");
 
     //!SECTION JWT api
     app.post("/jwt", async (req, res) => {
@@ -56,6 +59,7 @@ async function run() {
     //midleware
     const verifyToken = (req, res, next) => {
       if (!req.headers.authorization) {
+        console.log("there is no token on you");
         return res.status(401).send({ message: "Unauthorized" });
       }
       const token = req.headers.authorization.split(" ")[1];
@@ -204,6 +208,7 @@ async function run() {
     app.post("/api/user/createAgreement", verifyToken, async (req, res) => {
       try {
         const data = req.body;
+        console.log(data);
 
         const result = await agreementCollection.insertOne(data);
         res.send(result);
@@ -328,6 +333,113 @@ async function run() {
         res.status(500).send("Internal Server Error");
       }
     });
+
+    // get all argument request
+    app.get("/api/argumentRequest", verifyToken, async (req, res) => {
+      try {
+        const query = { Status: "pending" };
+
+        const result = await agreementCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error get argument Info:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+    //update status
+    app.put(
+      "/api/admin/handleAcptreq/:id",
+      verifyToken,
+      verifyAdmin,
+
+      async (req, res) => {
+        try {
+          let id = req.params.id;
+          const email = req.body.email;
+          // console.log(id, email);
+          const filerArgreement = { _id: new ObjectId(id) };
+          const filterUser = { email: email };
+          const updateUser = {
+            $set: {
+              role: "member",
+            },
+          };
+          const userUpdate = await userCollection.updateOne(
+            filterUser,
+            updateUser
+          );
+          const updatedArgeement = {
+            $set: {
+              Status: "checked",
+            },
+          };
+          const agreenmUpdate = await agreementCollection.updateOne(
+            filerArgreement,
+            updatedArgeement
+          );
+          res.status(200).send({ userUpdate, agreenmUpdate });
+        } catch (error) {
+          console.error("Error get update Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
+    // handle reject
+    app.put(
+      "/api/admin/handleReject/:id",
+      verifyToken,
+      verifyAdmin,
+
+      async (req, res) => {
+        try {
+          let id = req.params.id;
+
+          const filerArgreement = { _id: new ObjectId(id) };
+
+          const updatedArgeement = {
+            $set: {
+              Status: "checked",
+            },
+          };
+          const agreenmUpdate = await agreementCollection.updateOne(
+            filerArgreement,
+            updatedArgeement
+          );
+          res.status(200).send(agreenmUpdate);
+        } catch (error) {
+          console.error("Error get update Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
+    app.get(
+      "/api/user/getUserBasedArgument/:email",
+      verifyToken,
+      async (req, res) => {
+        try {
+          const email = req.params?.email;
+          // console.log(email);
+          const filter = { agreementReqEmail: email };
+          const result = await agreementCollection.find(filter).toArray();
+          res.send(result);
+        } catch (error) {
+          console.error("Error get argument Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
+
+    // copon api
+    app.get("/api/coupon", async (req, res) => {
+      try {
+        const result = await couponCollection.find().toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error get argument Info:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
     // Send a ping to confirm a successful connection
 
     await client.db("admin").command({ ping: 1 });
