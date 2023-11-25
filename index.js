@@ -40,6 +40,9 @@ async function run() {
       .db("apartmentDB")
       .collection("agreementData");
     const userCollection = client.db("apartmentDB").collection("usersData");
+    const announceCollection = client
+      .db("apartmentDB")
+      .collection("announcementsData");
 
     //!SECTION JWT api
     app.post("/jwt", async (req, res) => {
@@ -106,22 +109,27 @@ async function run() {
 
     // make member api
     //!SECTION creat api 2
-    app.patch("/api/makeMember/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const updatedDoc = {
-          $set: {
-            role: "member",
-          },
-        };
-        const result = await userCollection.updateOne(query, updatedDoc);
-        res.send(result);
-      } catch (error) {
-        console.error("Error fetching rooms:", error);
-        res.status(500).send("Internal Server Error");
+    app.patch(
+      "/api/makeMember/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const updatedDoc = {
+            $set: {
+              role: "member",
+            },
+          };
+          const result = await userCollection.updateOne(query, updatedDoc);
+          res.send(result);
+        } catch (error) {
+          console.error("Error fetching rooms:", error);
+          res.status(500).send("Internal Server Error");
+        }
       }
-    });
+    );
 
     app.get("/api/user/userRole/:email", verifyToken, async (req, res) => {
       try {
@@ -193,7 +201,7 @@ async function run() {
     });
     //agreementCollection
     //!SECTION 1111
-    app.post("/api/user/createAgreement", async (req, res) => {
+    app.post("/api/user/createAgreement", verifyToken, async (req, res) => {
       try {
         const data = req.body;
 
@@ -270,29 +278,56 @@ async function run() {
       }
     );
     //detelte member
-    app.patch("/api/admin/deleteMember/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const updatedDoc = {
-          $set: {
-            role: "user",
-          },
-        };
+    app.patch(
+      "/api/admin/deleteMember/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const updatedDoc = {
+            $set: {
+              role: "user",
+            },
+          };
 
-        const result = await userCollection.updateOne(query, updatedDoc);
+          const result = await userCollection.updateOne(query, updatedDoc);
 
-        if (result.modifiedCount > 0) {
-          res.status(200).send({ message: "User role updated successfully." });
-        } else {
-          res.status(404).send({ message: "User not found." });
+          if (result.modifiedCount > 0) {
+            res
+              .status(200)
+              .send({ message: "User role updated successfully." });
+          } else {
+            res.status(404).send({ message: "User not found." });
+          }
+        } catch (error) {
+          console.error("Error fetching Member Info:", error);
+          res.status(500).send("Internal Server Error");
         }
+      }
+    );
+    // get announce data
+    app.get("/api/announce", verifyToken, async (req, res) => {
+      try {
+        const result = await announceCollection.find().toArray();
+        res.send(result);
       } catch (error) {
-        console.error("Error fetching Member Info:", error);
+        console.error("Error fetching announce Info:", error);
         res.status(500).send("Internal Server Error");
       }
     });
-
+    // make announce api
+    app.post("/api/makeAnnounce", async (req, res) => {
+      try {
+        const data = req.body;
+        const result = await announceCollection.insertOne(data);
+        res.send(result);
+      } catch (error) {
+        console.error("Error create announce Info:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
     // Send a ping to confirm a successful connection
 
     await client.db("admin").command({ ping: 1 });
