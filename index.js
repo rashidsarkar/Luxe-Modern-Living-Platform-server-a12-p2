@@ -597,6 +597,28 @@ async function run() {
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     });
+    //search by mount name payment data
+    app.get("/PaymentByMounth/:email", async (req, res) => {
+      try {
+        const monthName = req.query?.monthname;
+        const email = req.params?.email;
+        console.log(monthName, email);
+        const filter = {
+          payForMunth: {
+            $regex: new RegExp(monthName, "i"),
+          },
+          userEmail: email,
+        };
+
+        const payments = await paymentCollection.find(filter).toArray();
+        res.send(payments);
+
+        // let filter = {};
+      } catch (error) {
+        console.error("Error post copon Info:", error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
 
     // Send a ping to confirm a successful connection
 
