@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const app = express();
 const cookieParser = require("cookie-parser");
 const port = process.env.PORT || 5000;
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // middleware
 app.use(
@@ -564,6 +565,22 @@ async function run() {
         }
       }
     );
+
+    // payment API
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      console.log(amount);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      // console.log(paymentIntent);
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
     // Send a ping to confirm a successful connection
 
