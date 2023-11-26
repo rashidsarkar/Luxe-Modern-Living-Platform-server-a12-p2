@@ -41,6 +41,9 @@ async function run() {
       .db("apartmentDB")
       .collection("agreementData");
     const userCollection = client.db("apartmentDB").collection("usersData");
+    const paymentCollection = client
+      .db("apartmentDB")
+      .collection("paymentData");
     const announceCollection = client
       .db("apartmentDB")
       .collection("announcementsData");
@@ -580,6 +583,19 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
+    });
+
+    // payment api
+    app.post("/payments", verifyToken, async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentCollection.insertOne(payment);
+      res.send(paymentResult);
+    });
+    app.get("/getPaymentsData/:email", verifyToken, async (req, res) => {
+      const email = req.params?.email;
+      const query = { userEmail: email };
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
