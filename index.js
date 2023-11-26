@@ -162,7 +162,7 @@ async function run() {
         }
         res.send({ userRole });
       } catch (error) {
-        console.error("Error fetching rooms:", error);
+        console.error("Error fetching user role:", error);
         res.status(500).send("Internal Server Error");
       }
     });
