@@ -598,7 +598,7 @@ async function run() {
       res.send(result);
     });
     //search by mount name payment data
-    app.get("/PaymentByMounth/:email", async (req, res) => {
+    app.get("/PaymentByMounth/:email", verifyToken, async (req, res) => {
       try {
         const monthName = req.query?.monthname;
         const email = req.params?.email;
