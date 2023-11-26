@@ -205,18 +205,55 @@ async function run() {
     });
     //agreementCollection
     //!SECTION 1111
+    //TODO -  Uncoment
+    // app.post("/api/user/createAgreement", verifyToken, async (req, res) => {
+    //   try {
+    //     const data = req.body;
+    //     console.log(data);
+
+    //     const result = await agreementCollection.insertOne(data);
+    //     res.send(result);
+    //   } catch (error) {
+    //     console.error("Error fetching rooms:", error);
+    //     res.status(500).send("Internal Server Error");
+    //   }
+    // });
+
+    // test work start
     app.post("/api/user/createAgreement", verifyToken, async (req, res) => {
       try {
         const data = req.body;
         console.log(data);
 
+        const agreementReqEmail = req.body.agreementReqEmail;
+
+        const filter = { agreementReqEmail: agreementReqEmail };
+        const existingAgreement = await agreementCollection
+          .find(filter)
+          .toArray();
+
+        const hasAcceptedAgreement = existingAgreement.some(
+          (existing) => existing.isBooked === true
+        );
+
+        if (hasAcceptedAgreement) {
+          // If an agreement with the provided email already exists and has been accepted
+          return res
+            .status(406)
+            .send(
+              "Agreement already exists and has been accepted for this email"
+            );
+        }
+
         const result = await agreementCollection.insertOne(data);
         res.send(result);
       } catch (error) {
-        console.error("Error fetching rooms:", error);
+        console.error("Error creating agreement:", error);
         res.status(500).send("Internal Server Error");
       }
     });
+
+    // test work End
 
     ///  database info
     app.get(
@@ -237,7 +274,7 @@ async function run() {
           });
           //total members
           const bookedRooms2 = await agreementCollection.countDocuments({
-            agreementAcceptDate: { $exists: true },
+            isBooked: true,
           });
           console.log(bookedRooms2);
           //total booked  rooms  and percent od abialble rooms
@@ -293,6 +330,7 @@ async function run() {
       async (req, res) => {
         try {
           const id = req.params.id;
+
           const query = { _id: new ObjectId(id) };
           const updatedDoc = {
             $set: {
@@ -361,6 +399,7 @@ async function run() {
         // console.log(req.body);
         const email = req.body.email;
         const agreementAcceptDate = req.body.agreementAcceptDate;
+        const isBooked = req.body.isBooked;
         // console.log(agreementAcceptDate);
         console.log(id, email, agreementAcceptDate);
         const filerArgreement = { _id: new ObjectId(id) };
@@ -378,6 +417,7 @@ async function run() {
           $set: {
             Status: "checked",
             agreementAcceptDate: agreementAcceptDate,
+            isBooked: isBooked,
           },
         };
         const options = { upsert: true };
@@ -407,6 +447,7 @@ async function run() {
           const updatedArgeement = {
             $set: {
               Status: "checked",
+              isBooked: false,
             },
           };
           const agreenmUpdate = await agreementCollection.updateOne(
@@ -428,6 +469,22 @@ async function run() {
           const email = req.params?.email;
           // console.log(email);
           const filter = { agreementReqEmail: email };
+          const result = await agreementCollection.find(filter).toArray();
+          res.send(result);
+        } catch (error) {
+          console.error("Error get argument Info:", error);
+          res.status(500).send("Internal Server Error");
+        }
+      }
+    );
+    app.get(
+      "/api/user/getMembersArgument/:email",
+      verifyToken,
+      async (req, res) => {
+        try {
+          const email = req.params?.email;
+          // console.log(email);
+          const filter = { agreementReqEmail: email, isBooked: true };
           const result = await agreementCollection.find(filter).toArray();
           res.send(result);
         } catch (error) {
