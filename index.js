@@ -10,7 +10,10 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 // middleware
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://stellar-malasada-952ea2.netlify.app",
+    ],
     credentials: true,
   })
 );
@@ -622,10 +625,10 @@ async function run() {
 
     // Send a ping to confirm a successful connection
 
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
