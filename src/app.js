@@ -54,7 +54,7 @@ app.use(handleAcptreq);
 app.use(makeCopun);
 
 app.get("/", (req, res) => {
-  res.send("building is running");
+  res.send("building is running on V2");
 });
 
 app.all("*", (req, res, next) => {
